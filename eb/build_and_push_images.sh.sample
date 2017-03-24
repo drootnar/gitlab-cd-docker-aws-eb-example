@@ -1,0 +1,13 @@
+#!/bin/bash
+TAG=${1-latest}
+REPO=<ecr_repo_url>
+
+function upload() {
+    echo "Building image $2 from directory $1"
+    docker build -t $2:$TAG $1
+    docker tag $2:$TAG $REPO/$2:$TAG
+    docker push $REPO/$2:$TAG
+    echo "Done"
+}
+
+upload backend cicd/backend

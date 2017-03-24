@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+
+  backend-app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    stdin_open: true
+    command: bash -c "pip install -r requirements.txt &&
+             gunicorn --chdir backend backend:app -w 2 --bind 0.0.0.0:8000 --log-level debug --reload"
+
+  backend-tests:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    stdin_open: true
+    command: bash -c "pip install -r requirements.txt -r requirements-test.txt &&
+             py.test"

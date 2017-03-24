@@ -1,0 +1,12 @@
+branch-defaults:
+  master:
+    environment: <eb_env_name>
+global:
+  application_name: <eb_app_name>
+  branch: null
+  default_ec2_keyname: <aws_keyname>
+  default_platform: Multi-container Docker 1.11.2 (Generic)
+  default_region: <aws_region>
+  profile: null
+  repository: null
+  sc: git

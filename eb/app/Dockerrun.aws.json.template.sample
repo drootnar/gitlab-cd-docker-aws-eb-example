@@ -1,0 +1,18 @@
+{
+    "AWSEBDockerrunVersion": 2,
+    "containerDefinitions": [
+        {
+            "essential": true,
+            "image": "<ecr_repo_name>/cicd/backend:${TAG}",
+            "memory": 128,
+            "mountPoints": [],
+            "name": "backend",
+            "portMappings": [
+                {
+                    "containerPort": 8000,
+                    "hostPort": 80
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,68 @@
+cache:
+  key: "$CI_BUILD_NAME"
+  untracked: true
+
+
+stages:
+  - test
+  - configure
+  - build
+  - deploy
+
+test-backend:
+  image: python:3.5.2
+  stage: test
+  before_script:
+    - cd backend
+    - pip install -r requirements.txt -r requirements-test.txt
+  script:
+    - py.test
+
+configure-aws:
+  image: kowalski0000/awscli:latest
+  stage: configure
+  only:
+    - develop
+    - master
+  artifacts:
+    paths:
+      - config/
+  script:
+    - mkdir config
+    - printf "[eb-cli]\naws_access_key_id = %s\naws_secret_access_key = %s\n" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" > config/aws_credentials
+    - printf "[profile eb-cli]\nregion=eu-central-1\noutput=json" > config/aws_config
+    - aws ecr get-login --region eu-central-1 > config/docker_login
+
+build-docker-images:
+  image: docker:latest
+  stage: build
+  only:
+    - develop
+    - master
+  before_script:
+    - apk add --update bash
+  script:
+    - source config/docker_login
+    - bash -ex eb/build_and_push_images.sh ${CI_BUILD_REF_NAME}
+  dependencies:
+    - configure-aws
+
+eb-deploy:
+  image: kowalski0000/awscli:latest
+  stage: deploy
+  variables:
+    GIT_STRATEGY: clone
+  only:
+    - master
+  dependencies:
+    - configure-aws
+  before_script:
+    - mkdir ~/.aws/
+    - cp config/aws_credentials ~/.aws/credentials
+    - cp config/aws_config ~/.aws/config
+  script:
+    - cd eb/app
+    - cat Dockerrun.aws.json.template | TAG=${CI_BUILD_REF_NAME} envsubst > Dockerrun.aws.json
+    - git checkout -B "$CI_BUILD_REF_NAME" "$CI_BUILD_REF"
+    - git add Dockerrun.aws.json
+    - eb deploy --staged
